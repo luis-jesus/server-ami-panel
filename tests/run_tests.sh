@@ -74,6 +74,17 @@ assert_file_contains() {
     fi
 }
 
+assert_path_missing() {
+    local path=$1
+    local message=$2
+
+    if [[ ! -e "$path" ]]; then
+        pass "$message"
+    else
+        fail "$message: path still exists $path"
+    fi
+}
+
 assert_valid_json() {
     local path=$1
     local message=$2
@@ -99,7 +110,7 @@ run_test() {
 }
 
 test_shell_syntax() {
-    local scripts=()
+    local scripts=("$ROOT_DIR/install.sh")
 
     while IFS= read -r script_path; do
         scripts+=("$script_path")
@@ -245,6 +256,124 @@ test_install_requirements_print() {
     else
         fail "install requirements prints install command"
     fi
+
+    if [[ $(detect_package_backend) == 'dpkg' ]]; then
+        if printf '%s\n' "$command_output" | grep -Eq 'python3-venv'; then
+            pass "install requirements includes python3-venv for dpkg"
+        else
+            fail "install requirements includes python3-venv for dpkg"
+        fi
+    fi
+}
+
+test_installer_help() {
+    local help_output
+
+    help_output=$(bash "$ROOT_DIR/install.sh" --help)
+
+    if printf '%s\n' "$help_output" | grep -Eq '^Usage: bash install.sh'; then
+        pass "installer help"
+    else
+        fail "installer help"
+    fi
+}
+
+test_installer_menu_render() {
+    local home_root="$TMP_ROOT/installer-menu-home"
+    local menu_file="$TMP_ROOT/installer-menu.txt"
+    local color_file="$TMP_ROOT/installer-menu-color.txt"
+
+    mkdir -p "$home_root"
+
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    SERVERAM1_INSTALLER_COLOR_MODE=never \
+    bash "$ROOT_DIR/install.sh" print-menu > "$menu_file"
+
+    assert_file_contains "$menu_file" 'Services Monitor AMI' "installer menu shows title"
+    assert_file_contains "$menu_file" 'install = instala la aplicacion y prepara el entorno' "installer menu shows install option prefix"
+    assert_file_contains "$menu_file" 'virtual\(install\)' "installer menu shows install option suffix"
+    assert_file_contains "$menu_file" 'log = muestra el historial del instalador\(log\)' "installer menu shows log option"
+    assert_file_contains "$menu_file" 'exit = sale del instalador\(exit\)' "installer menu shows exit option"
+    assert_file_contains "$menu_file" 'Escribe un comando \[install, log, exit\]:' "installer menu shows command prompt"
+
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    SERVERAM1_INSTALLER_COLOR_MODE=always \
+    bash "$ROOT_DIR/install.sh" print-menu > "$color_file"
+
+    assert_file_contains "$color_file" $'\033\[32m' "installer menu title uses green ANSI"
+    assert_file_contains "$color_file" $'\033\[31m' "installer menu separators use red ANSI"
+    assert_file_contains "$color_file" $'\033\[34m' "installer menu options use blue ANSI"
+}
+
+test_installer_install_cycle() {
+    local home_root="$TMP_ROOT/installer-cycle-home"
+    local install_output="$TMP_ROOT/installer-install.txt"
+    local menu_file="$TMP_ROOT/installer-installed-menu.txt"
+    local log_file="$TMP_ROOT/installer-log.txt"
+
+    mkdir -p "$home_root"
+
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    SERVERAM1_INSTALLER_COLOR_MODE=never \
+    bash "$ROOT_DIR/install.sh" install > "$install_output"
+
+    assert_dir_exists "$home_root/.local/share/serveram1/venv" "installer creates venv"
+    assert_file_exists "$home_root/.local/share/applications/services-monitor-ami.desktop" "installer creates app desktop entry"
+    assert_file_exists "$home_root/.local/share/applications/services-monitor-ami-installer.desktop" "installer creates installer desktop entry"
+    assert_file_exists "$home_root/.local/bin/services-monitor-ami" "installer creates app shim"
+    assert_file_exists "$home_root/.local/bin/services-monitor-ami-installer" "installer creates installer shim"
+    assert_file_exists "$home_root/.local/share/serveram1/install.env" "installer writes metadata"
+    assert_file_contains "$home_root/.local/bin/services-monitor-ami" '^exec bash ' "installer app shim invokes bash"
+    assert_file_contains "$home_root/.local/bin/services-monitor-ami-installer" '^exec bash ' "installer installer shim invokes bash"
+
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    SERVERAM1_INSTALLER_COLOR_MODE=never \
+    bash "$ROOT_DIR/install.sh" print-menu > "$menu_file"
+
+    assert_file_contains "$menu_file" 'reinstall = reinstala la aplicacion y regenera el' "installer installed menu shows reinstall prefix"
+    assert_file_contains "$menu_file" 'entorno\(reinstall\)' "installer installed menu shows reinstall suffix"
+    assert_file_contains "$menu_file" 'update = actualiza la instalacion desde el' "installer installed menu shows update prefix"
+    assert_file_contains "$menu_file" 'repositorio\(update\)' "installer installed menu shows update suffix"
+    assert_file_contains "$menu_file" 'uninstall = desinstala la aplicacion\(uninstall\)' "installer installed menu shows uninstall"
+
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    SERVERAM1_INSTALLER_COLOR_MODE=never \
+    bash "$ROOT_DIR/install.sh" log > "$log_file"
+
+    assert_file_contains "$log_file" 'instalacion completada' "installer log records completion"
+
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    SERVERAM1_INSTALLER_COLOR_MODE=never \
+    bash "$ROOT_DIR/install.sh" uninstall >/dev/null
+
+    assert_path_missing "$home_root/.local/share/serveram1/install.env" "installer removes metadata on uninstall"
+    assert_path_missing "$home_root/.local/share/serveram1/venv" "installer removes venv on uninstall"
+}
+
+test_installer_e2e_temp_clone() {
+    if bash "$ROOT_DIR/tests/e2e_installer.sh"; then
+        pass "installer e2e temp clone"
+    else
+        fail "installer e2e temp clone"
+    fi
 }
 
 test_panel_help() {
@@ -371,6 +500,10 @@ main() {
     run_test "update packages help" test_update_packages_help
     run_test "install requirements help" test_install_requirements_help
     run_test "install requirements print" test_install_requirements_print
+    run_test "installer help" test_installer_help
+    run_test "installer menu render" test_installer_menu_render
+    run_test "installer install cycle" test_installer_install_cycle
+    run_test "installer e2e temp clone" test_installer_e2e_temp_clone
     run_test "panel help" test_panel_help
     run_test "panel python syntax" test_panel_python_syntax
     run_test "panel services payload" test_panel_services_payload

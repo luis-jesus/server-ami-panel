@@ -25,7 +25,8 @@ Options:
 
 Notes:
   - This script installs system packages, not Python packages from requirements.txt.
-  - The project itself does not require third-party Python libraries.
+    - The project itself does not require third-party Python libraries.
+    - The installer uses a managed virtual environment and needs venv support.
   - Supported package backends: dpkg/apt, zypper, rpm with dnf or yum,
     pacman, apk and xbps.
 EOF
@@ -74,7 +75,7 @@ build_install_command() {
             fi
             INSTALL_COMMAND=(apt-get install)
             append_auto_yes "-y"
-            INSTALL_COMMAND+=(python3 python3-pip)
+            INSTALL_COMMAND+=(python3 python3-pip python3-venv)
             ;;
         zypper)
             INSTALL_COMMAND=(zypper install)

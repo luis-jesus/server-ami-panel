@@ -43,6 +43,8 @@ El proyecto está pensado para documentar un host real con foco en desarrollo, c
 
 No requiere `pip install`, `npm install` ni frameworks adicionales para funcionar. El panel corre con la librería estándar de Python.
 
+La instalación administrada sí crea un entorno virtual local para encapsular la ejecución del panel y de sus launchers, aunque actualmente no descargue dependencias Python de terceros.
+
 ## Instalación
 
 ### 1. Clonar el repositorio
@@ -65,6 +67,8 @@ Para instalar automáticamente `python3` y `pip` del sistema cuando el backend e
 ```bash
 bash scripts/install_requirements.sh -y
 ```
+
+En backends tipo Debian también se incluirá `python3-venv`, porque el instalador usa un entorno virtual administrado por usuario.
 
 ### 3. Verificar dependencias mínimas
 
@@ -107,6 +111,36 @@ bash tests/run_tests.sh
 ```
 
 La suite valida sintaxis, detección multi-distro, una corrida rápida del inventario, el backend Python del panel, la generación del payload de servicios y el flujo de revisión de actualizaciones.
+
+## Instalador interactivo
+
+El repositorio incluye un instalador principal en `install.sh`.
+
+```bash
+bash install.sh
+```
+
+Características del instalador:
+
+- Primera ejecución: muestra `install`, `log` y `exit`.
+- Después de instalar: muestra `reinstall`, `update`, `uninstall`, `log` y `exit`.
+- Crea un entorno virtual en `~/.local/share/serveram1/venv`.
+- Genera accesos directos en `~/.local/share/applications/`.
+- Instala shims en `~/.local/bin/`.
+- Renderiza el menú con colores ANSI, fondo negro cuando la terminal lo soporte y ajuste dinámico al ancho de la ventana maximizada.
+
+### Subcomandos útiles
+
+```bash
+bash install.sh install
+bash install.sh reinstall
+bash install.sh update
+bash install.sh uninstall
+bash install.sh log
+bash install.sh run
+```
+
+`run` arranca el panel local usando el Python del entorno virtual instalado y abre la interfaz web en el navegador disponible, con preferencia por modo app cuando el navegador lo soporte.
 
 ## Uso rápido
 

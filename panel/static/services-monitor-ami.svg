@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Services Monitor AMI</title>
+  <desc id="desc">Green monitoring waveform inside a dark rounded square.</desc>
+  <rect x="16" y="16" width="224" height="224" rx="36" fill="#0a0f14"/>
+  <path d="M48 160h34l18-52 24 88 20-64 14 28h50" fill="none" stroke="#29b36a" stroke-linecap="round" stroke-linejoin="round" stroke-width="18"/>
+  <circle cx="188" cy="84" r="22" fill="#1d74f5"/>
+</svg>
