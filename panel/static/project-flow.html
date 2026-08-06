@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flujo del Proyecto | ServerAM1</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="documentation-page">
+  <div class="backdrop"></div>
+  <main class="shell doc-shell">
+    <header class="hero doc-hero">
+      <div>
+        <div class="system-footer-brand doc-brand" aria-label="ServerAM1 Documentacion">
+          <p class="eyebrow">ServerAM1</p>
+          <p class="eyebrow">Documentacion</p>
+        </div>
+        <h1>Flujo documentado del proyecto</h1>
+        <p class="lede">Esta guia te deja elegir entre una vista tecnica y una vista para usuario final, manteniendo el mismo flujo operativo del proyecto segun el nivel de detalle que necesites.</p>
+        <div class="doc-switcher" role="tablist" aria-label="Tipo de documentacion">
+          <button class="secondary-button doc-toggle-button active-switch" type="button" data-doc-target="technical" aria-pressed="true" aria-selected="true">
+            <span class="doc-toggle-icon">T1</span>
+            <span class="doc-toggle-copy">
+              <strong>Documentacion tecnica</strong>
+              <small>Comandos, rutas, validacion y artefactos</small>
+            </span>
+          </button>
+          <button class="secondary-button doc-toggle-button" type="button" data-doc-target="user" aria-pressed="false" aria-selected="false">
+            <span class="doc-toggle-icon">U1</span>
+            <span class="doc-toggle-copy">
+              <strong>Documentacion usuario final</strong>
+              <small>Recorrido guiado y acciones recomendadas</small>
+            </span>
+          </button>
+        </div>
+        <p class="doc-switch-note">Selecciona el tipo de documentacion que quieres consultar sin salir del centro de ejecucion y monitoreo.</p>
+      </div>
+      <div class="hero-meta">
+        <a class="secondary-button" href="/">Volver al panel</a>
+      </div>
+    </header>
+
+    <section class="doc-view" data-doc-view="technical">
+      <section class="doc-grid">
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>1. Inicio del panel</h2>
+            <span class="badge">Entrada</span>
+          </div>
+          <p>El punto de arranque recomendado es <strong>bash scripts/run_panel.sh</strong>. Ese wrapper valida <strong>python3</strong> y delega la ejecucion a <strong>panel/server.py</strong>, que publica la UI local en <strong>127.0.0.1:8765</strong> por defecto.</p>
+          <p>La portada del centro de ejecucion y monitoreo concentra el resumen del host, el briefing de ciberseguridad, la cinta de mercado y el acceso a los dos paneles operativos.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>2. Flujo de inventario</h2>
+            <span class="badge">Panel 1</span>
+          </div>
+          <p>Desde <strong>Inventario y paquetes</strong> puedes lanzar <strong>scripts/collect_inventory.sh</strong> en modo completo o rapido. El modo rapido evita generar el archivo comprimido de configuraciones para acelerar la corrida.</p>
+          <p>Cada ejecucion crea un snapshot en <strong>output/&lt;host&gt;_&lt;timestamp&gt;</strong> con <strong>manifest.txt</strong>, <strong>warnings.log</strong>, los reportes bajo <strong>text/</strong> y, cuando aplica, <strong>configs/configs.tar.gz</strong>.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>3. Flujo de paquetes</h2>
+            <span class="badge accent">Update</span>
+          </div>
+          <p>El mismo panel dispara <strong>scripts/update_packages.sh</strong> en modo <strong>check</strong> o <strong>apply</strong>, con soporte para <strong>--no-refresh</strong>, <strong>--yes</strong> y control explicito de fuentes confiables.</p>
+          <p>Antes de aplicar, el flujo revisa seguridad, firmas y origenes. La allowlist local vive en <strong>config/trusted-sources.txt</strong>. Si el modo <strong>apply</strong> continua, el resultado queda en <strong>update-reports/&lt;host&gt;_&lt;timestamp&gt;</strong> con <strong>report.json</strong>, <strong>summary.txt</strong>, <strong>source-trust.txt</strong>, <strong>security.txt</strong> y cambios detectados.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>4. Flujo de monitoreo</h2>
+            <span class="badge">Panel 2</span>
+          </div>
+          <p>La vista de servicios consulta estado, backend, puertos esperados y capacidades de <strong>ssh</strong>, <strong>samba</strong>, <strong>docker</strong> y <strong>firewall</strong>. En SSH, el estado de <strong>sftp</strong> se deriva de la configuracion del servicio.</p>
+          <p>Cuando el host lo permite, el panel habilita acciones <strong>start</strong>, <strong>stop</strong> y <strong>restart</strong>, confirmacion adicional para acciones sensibles y lectura de logs recientes por servicio.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>5. Revision de reportes</h2>
+            <span class="badge">Visor</span>
+          </div>
+          <p>El visor permite filtrar ejecuciones, abrir detalles, previsualizar archivos, descargar artefactos puntuales, comparar corridas del mismo tipo y exportar CSV o resumentes operativos.</p>
+          <p>Para auditoria y seguimiento, los archivos mas utiles suelen ser <strong>manifest.txt</strong>, <strong>summary.txt</strong>, <strong>report.json</strong>, <strong>security.txt</strong>, <strong>source-trust.txt</strong> y los TSV de cambios planeados o aplicados.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>6. Validacion y cierre</h2>
+            <span class="badge">Control</span>
+          </div>
+          <p>La validacion rapida del proyecto se apoya en <strong>bash tests/run_tests.sh</strong>, que cubre sintaxis, deteccion, una corrida rapida del inventario y el backend Python del panel.</p>
+          <p>Ademas, la API local expone endpoints como <strong>/api/status</strong>, <strong>/api/services</strong>, <strong>/api/reports</strong>, <strong>/api/jobs/inventory</strong> y <strong>/api/jobs/update</strong> para diagnostico local e integraciones ligeras sin dependencias externas.</p>
+        </article>
+      </section>
+
+      <section class="card doc-card doc-reference-card">
+        <div class="card-head">
+          <h2>Secuencia recomendada de uso</h2>
+          <span class="badge accent">Recorrido</span>
+        </div>
+        <ol class="doc-sequence">
+          <li>Levanta el panel con <strong>bash scripts/run_panel.sh</strong> y confirma el resumen del host en la portada.</li>
+          <li>Ejecuta un inventario rapido si buscas velocidad o uno completo si necesitas incluir configuraciones relevantes.</li>
+          <li>Revisa el snapshot generado en <strong>output/</strong> para validar manifest, warnings y colectores clave.</li>
+          <li>Lanza un <strong>check</strong> de paquetes para revisar cambios planeados, advisories y confianza de repositorios.</li>
+          <li>Si el trust es aceptable, confirma el modo <strong>apply</strong> y valida despues el contenido de <strong>update-reports/</strong>.</li>
+          <li>Consulta el panel de servicios para confirmar el estado de SSH, Samba, Docker y firewall tras los cambios.</li>
+          <li>Usa el visor para comparar ejecuciones, descargar evidencia y, al cierre, corre <strong>bash tests/run_tests.sh</strong> si hiciste cambios en el proyecto.</li>
+        </ol>
+      </section>
+    </section>
+
+    <section class="doc-view hidden-panel" data-doc-view="user">
+      <section class="doc-grid">
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>1. Que hace este sistema</h2>
+            <span class="badge">Resumen</span>
+          </div>
+          <p>Este centro te ayuda a revisar el estado general del equipo, generar inventarios, comprobar actualizaciones de paquetes y vigilar servicios clave desde una sola interfaz local.</p>
+          <p>No necesitas recordar todos los comandos: el panel organiza las acciones principales y te muestra la salida de cada proceso.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>2. Como empezar</h2>
+            <span class="badge">Inicio</span>
+          </div>
+          <p>Abre el panel y revisa la portada. Ahí veras el resumen del host, noticias de seguridad y los accesos a <strong>Inventario y paquetes</strong> y <strong>Servicios</strong>.</p>
+          <p>Si solo quieres una revision general del equipo, normalmente el mejor primer paso es ejecutar un inventario rapido.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>3. Inventario del equipo</h2>
+            <span class="badge">Panel 1</span>
+          </div>
+          <p>Usa el boton de inventario para crear un snapshot del sistema. El modo rapido tarda menos; el modo completo guarda mas contexto y configuraciones.</p>
+          <p>Despues puedes abrir el reporte generado para ver hardware, software, servicios, seguridad, contenedores y otros datos relevantes del host.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>4. Revision de paquetes</h2>
+            <span class="badge accent">Update</span>
+          </div>
+          <p>Primero usa <strong>Solo reporte</strong> para revisar que cambios propone el sistema antes de instalar nada.</p>
+          <p>Si el resultado se ve correcto, puedes pasar a <strong>Aplicar cambios</strong>. El panel te pedira confirmacion antes de continuar.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>5. Monitoreo de servicios</h2>
+            <span class="badge">Panel 2</span>
+          </div>
+          <p>En la vista de servicios puedes revisar rapidamente si SSH, Samba, Docker y el firewall estan activos, detenidos o con alguna limitacion.</p>
+          <p>Tambien puedes consultar logs y, cuando el entorno lo permite, iniciar, detener o reiniciar servicios desde la misma interfaz.</p>
+        </article>
+
+        <article class="card doc-card">
+          <div class="card-head">
+            <h2>6. Donde revisar resultados</h2>
+            <span class="badge">Reportes</span>
+          </div>
+          <p>El visor de reportes te deja abrir resultados recientes, comparar ejecuciones y descargar archivos utiles para respaldo o seguimiento.</p>
+          <p>Si algo no sale como esperas, empieza por revisar el resumen del reporte, las advertencias y los archivos de detalle disponibles en el visor.</p>
+        </article>
+      </section>
+
+      <section class="card doc-card doc-reference-card">
+        <div class="card-head">
+          <h2>Recorrido recomendado para usuario final</h2>
+          <span class="badge accent">Guia</span>
+        </div>
+        <ol class="doc-sequence">
+          <li>Abre la portada y confirma que el equipo se vea correctamente identificado.</li>
+          <li>Ejecuta un inventario rapido para obtener una vista general del sistema.</li>
+          <li>Revisa el reporte desde el visor para entender el estado actual del host.</li>
+          <li>Haz una comprobacion de paquetes en modo reporte antes de aplicar cambios.</li>
+          <li>Solo si el resultado es correcto, confirma la aplicacion de paquetes.</li>
+          <li>Valida en el panel de servicios que los componentes importantes sigan operando.</li>
+          <li>Guarda o compara reportes si necesitas evidencia o seguimiento posterior.</li>
+        </ol>
+      </section>
+
+      <section class="card doc-card doc-reference-card">
+        <div class="card-head">
+          <h2>Preguntas frecuentes</h2>
+          <span class="badge">FAQ</span>
+        </div>
+        <div class="doc-faq-grid">
+          <article class="doc-faq-item">
+            <h3>Que opcion conviene primero</h3>
+            <p>Si solo quieres entender el estado general del equipo, empieza con un inventario rapido y revisa su reporte antes de tocar paquetes o servicios.</p>
+          </article>
+          <article class="doc-faq-item">
+            <h3>Cuando debo aplicar paquetes</h3>
+            <p>Solo despues de revisar el modo reporte y confirmar que los cambios planeados y la confianza de las fuentes coinciden con lo que esperas.</p>
+          </article>
+          <article class="doc-faq-item">
+            <h3>Donde veo si algo fallo</h3>
+            <p>Empieza por el visor del reporte, el resumen de ejecucion, las advertencias y los logs del panel de servicios si el problema afecta un daemon concreto.</p>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const docButtons = Array.from(document.querySelectorAll('[data-doc-target]'));
+    const docViews = Array.from(document.querySelectorAll('[data-doc-view]'));
+
+    function setDocView(viewName) {
+      docButtons.forEach((button) => {
+        const isActive = button.dataset.docTarget === viewName;
+        button.classList.toggle('active-switch', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      docViews.forEach((section) => {
+        section.classList.toggle('hidden-panel', section.dataset.docView !== viewName);
+      });
+    }
+
+    docButtons.forEach((button) => {
+      button.addEventListener('click', () => setDocView(button.dataset.docTarget || 'technical'));
+    });
+  </script>
+</body>
+</html>

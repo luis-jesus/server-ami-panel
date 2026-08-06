@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServerAM1 Panel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="backdrop"></div>
+  <canvas id="particles-canvas" class="particles-canvas" aria-hidden="true"></canvas>
+  <main class="shell">
+    <section class="market-ribbon-bar" aria-label="Cinta de mercado global">
+      <div class="market-ribbon-head">
+        <span class="badge accent">Mercado</span>
+        <p>Indices y divisas en vivo para todos los paneles.</p>
+      </div>
+      <div class="market-ribbon-shell">
+        <div class="market-ticker-track" id="global-market-ticker">
+          <article class="market-chip is-loading">
+            <p>Mercado</p>
+            <strong>Cargando...</strong>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="view view-active" data-view="home">
+      <header class="hero hero-home">
+        <div>
+          <p class="eyebrow">ServerAM1</p>
+          <h1>Centro de ejecucion y monitoreo</h1>
+          <p class="lede">Selecciona el panel operativo que quieres abrir. La portada concentra el estado esencial del host, un briefing de ciberseguridad y una cinta publica de mercado.</p>
+          <div class="home-hero-actions">
+            <button class="nav-tile nav-tile-compact" data-target-view="inventory" type="button">
+              <span class="badge">Panel 1</span>
+              <h2>Inventario y paquetes</h2>
+              <p>Reportes, jobs y paquetes.</p>
+            </button>
+            <button class="nav-tile nav-tile-compact" data-target-view="services" type="button">
+              <span class="badge accent">Panel 2</span>
+              <h2>Servicios</h2>
+              <p>Estado, acciones y logs.</p>
+            </button>
+          </div>
+        </div>
+        <article class="card host-summary-card">
+          <div class="card-head">
+            <h2>Resumen del host</h2>
+            <span class="badge">Live</span>
+          </div>
+          <div class="host-summary-grid" id="home-system-summary">
+            <article class="summary-tile">
+              <p>Sistema operativo</p>
+              <strong>Cargando...</strong>
+            </article>
+          </div>
+        </article>
+      </header>
+
+      <section class="home-briefing-panel">
+        <div class="home-briefing-column">
+          <div class="home-briefing-head">
+            <div>
+              <h2>Noticias y actualizaciones</h2>
+            </div>
+            <div class="briefing-meta" id="home-security-meta">
+              <span class="pill">Blogs + sitios</span>
+            </div>
+          </div>
+          <div class="briefing-list" id="home-security-feed">
+            <article class="briefing-item is-loading">
+              <p class="briefing-kicker">Inicializando</p>
+              <h3>Cargando noticias y sitios relevantes...</h3>
+            </article>
+          </div>
+          <div class="briefing-column-footer">
+            <button class="ghost-link briefing-history-link" id="open-headlines-modal" type="button">Ver historial de 7 dias</button>
+          </div>
+        </div>
+
+        <div class="home-briefing-column">
+          <div class="home-briefing-head">
+            <div>
+              <h2>Vulnerabilidades recientes</h2>
+            </div>
+            <div class="briefing-meta" id="home-vulnerability-meta">
+              <span class="pill">KEV</span>
+            </div>
+          </div>
+          <div class="briefing-list" id="home-vulnerability-feed">
+            <article class="briefing-item is-loading">
+              <p class="briefing-kicker">Inicializando</p>
+              <h3>Cargando vulnerabilidades recientes...</h3>
+            </article>
+          </div>
+          <div class="briefing-column-footer">
+            <button class="ghost-link briefing-history-link" id="open-vulnerabilities-modal" type="button">Ver historial de 7 dias</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="briefing-modal" class="modal-overlay hidden-panel" aria-hidden="true">
+        <div class="modal-card briefing-modal-card">
+          <div class="card-head modal-head">
+            <div>
+              <h2 id="briefing-modal-title">Historial</h2>
+              <p id="briefing-modal-subtitle">Entradas recientes del briefing.</p>
+            </div>
+            <button class="secondary-button" id="close-briefing-modal" type="button">Cerrar</button>
+          </div>
+          <div class="briefing-list modal-briefing-list" id="briefing-modal-list"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="view hidden-panel" data-view="inventory">
+      <div class="panel-topbar">
+        <button class="secondary-button" data-target-view="home" type="button">Inicio</button>
+        <div class="view-switcher">
+          <button class="secondary-button active-switch" data-target-view="inventory" type="button">Inventario y paquetes</button>
+          <button class="secondary-button" data-target-view="services" type="button">Servicios</button>
+        </div>
+        <div class="hero-meta" id="server-meta">
+          <span class="pill">Inicializando</span>
+        </div>
+      </div>
+
+      <header class="hero panel-hero">
+        <div>
+          <p class="eyebrow">Panel 1</p>
+          <h1>Inventario y paquetes</h1>
+          <p class="lede">Lanza inventarios, revisiones de paquetes y consulta los reportes recientes desde una vista operativa dedicada.</p>
+        </div>
+      </header>
+
+      <section class="grid two-up">
+        <article class="card action-card">
+          <div class="card-head">
+            <h2>Inventario</h2>
+            <span class="badge">Scripts existentes</span>
+          </div>
+          <p>Ejecuta el snapshot completo o rapido y monitorea la salida en vivo.</p>
+          <label class="toggle">
+            <input type="checkbox" id="inventory-quick">
+            <span>Modo rapido</span>
+          </label>
+          <button class="primary-button" id="run-inventory" type="button">Ejecutar inventario</button>
+          <div id="inventory-execution-state" class="execution-state hidden-panel"></div>
+        </article>
+
+        <article class="card action-card">
+          <div class="card-head">
+            <h2>Paquetes</h2>
+            <span class="badge accent">Actualizacion</span>
+          </div>
+          <p>Lanza comprobaciones o aplica actualizaciones usando el flujo ya documentado del proyecto.</p>
+          <div class="stacked-options">
+            <label class="toggle">
+              <input type="radio" name="update-mode" value="check" checked>
+              <span>Solo reporte</span>
+            </label>
+            <label class="toggle">
+              <input type="radio" name="update-mode" value="apply">
+              <span>Aplicar cambios</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="update-no-refresh">
+              <span>Sin refresco de metadatos</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="update-auto-yes">
+              <span>Modo no interactivo</span>
+            </label>
+            <label class="toggle warning-toggle">
+              <input type="checkbox" id="update-allow-untrusted">
+              <span>Permitir fuentes en revision o inseguras</span>
+            </label>
+          </div>
+          <button class="primary-button" id="run-update" type="button">Ejecutar flujo de paquetes</button>
+          <div id="update-execution-state" class="execution-state hidden-panel"></div>
+          <div id="apply-confirmation" class="confirmation-panel hidden-panel">
+            <p id="apply-confirmation-text">Confirmacion pendiente.</p>
+            <div class="confirmation-actions">
+              <input type="text" id="apply-confirmation-input" class="panel-input" placeholder="Escribe APPLY para continuar">
+              <button class="secondary-button" id="confirm-apply" type="button">Confirmar apply</button>
+              <button class="secondary-button" id="cancel-apply" type="button">Cancelar</button>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid three-up metrics-grid" id="metrics-grid"></section>
+
+      <section class="grid three-up trend-grid" id="trend-grid"></section>
+
+      <section class="card jobs-card">
+        <div class="card-head">
+          <h2>Ejecuciones</h2>
+          <span class="badge">Monitoreo en vivo</span>
+        </div>
+        <div class="jobs-list" id="jobs-list"></div>
+      </section>
+
+      <section class="reports-grid">
+        <article class="card report-selector-card">
+          <div class="card-head">
+            <div>
+              <h2>Selector de reportes</h2>
+              <p>Elige el tipo de ejecucion que quieres abrir en el visor y navega su historial reciente.</p>
+            </div>
+            <div class="report-menu-switcher">
+              <button class="secondary-button report-menu-button active-switch" id="show-inventory-menu" data-report-menu="inventory" type="button">
+                <span class="report-menu-label">Inventarios recientes</span>
+                <span class="report-menu-count" id="inventory-menu-count">0</span>
+              </button>
+              <button class="secondary-button report-menu-button" id="show-update-menu" data-report-menu="update" type="button">
+                <span class="report-menu-label">Actualizaciones recientes</span>
+                <span class="report-menu-count" id="update-menu-count">0</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="report-selector-summary" id="report-selector-summary">
+            <article class="summary-tile">
+              <p>Ultimo inventario</p>
+              <strong>Esperando datos...</strong>
+            </article>
+          </div>
+
+          <div class="report-menu-panel" id="inventory-menu-panel" data-report-panel="inventory">
+            <div class="list-controls">
+              <input type="search" id="inventory-search" class="panel-input" placeholder="Buscar snapshot, host, backend...">
+              <select id="inventory-filter" class="panel-select">
+                <option value="all">Todos</option>
+                <option value="quick">Quick</option>
+                <option value="full">Full</option>
+                <option value="warning">Con advertencias</option>
+              </select>
+              <button class="secondary-button" id="export-inventory-csv" type="button">Exportar CSV</button>
+            </div>
+            <div class="report-list" id="inventory-reports"></div>
+            <div class="report-menu-footer" id="inventory-reports-more"></div>
+          </div>
+
+          <div class="report-menu-panel hidden-panel" id="update-menu-panel" data-report-panel="update">
+            <div class="list-controls">
+              <input type="search" id="update-search" class="panel-input" placeholder="Buscar modo, trust, origenes...">
+              <select id="update-filter" class="panel-select">
+                <option value="all">Todos</option>
+                <option value="trusted">Trust trusted</option>
+                <option value="review">Trust review</option>
+                <option value="check">Modo check</option>
+                <option value="apply">Modo apply</option>
+                <option value="changes">Con cambios planeados</option>
+              </select>
+              <button class="secondary-button" id="export-update-csv" type="button">Exportar CSV</button>
+            </div>
+            <div class="report-list" id="update-reports"></div>
+            <div class="report-menu-footer" id="update-reports-more"></div>
+          </div>
+        </article>
+      </section>
+
+      <div id="report-modal" class="modal-overlay hidden-panel" aria-hidden="true">
+        <div class="modal-card">
+          <div class="card-head modal-head">
+            <div>
+              <h2 id="report-modal-title">Seleccionar reporte</h2>
+              <p id="report-modal-subtitle">Elige la ejecucion que quieres revisar en el visor.</p>
+            </div>
+            <button class="secondary-button" id="close-report-modal" type="button">Cerrar</button>
+          </div>
+          <div class="report-list modal-report-list" id="report-modal-list"></div>
+        </div>
+      </div>
+
+      <section class="card viewer-card">
+        <div class="card-head">
+          <h2>Visor de reporte</h2>
+          <span class="badge">Detalle</span>
+        </div>
+        <div id="report-detail" class="report-detail empty-state">Selecciona una ejecucion para inspeccionar su salida.</div>
+        <div id="detail-actions" class="detail-actions"></div>
+        <div class="compare-controls">
+          <select id="compare-report-select" class="panel-select">
+            <option value="">Comparar con...</option>
+          </select>
+          <select id="compare-file-select" class="panel-select">
+            <option value="">Archivo para diff...</option>
+          </select>
+          <button class="secondary-button" id="clear-compare" type="button">Limpiar comparacion</button>
+          <button class="secondary-button" id="export-summary" type="button">Descargar resumen</button>
+        </div>
+        <div id="comparison-panel" class="comparison-panel empty-state">Selecciona un reporte y, si quieres, comparalo con otra ejecucion del mismo tipo.</div>
+        <div id="file-diff-panel" class="comparison-panel empty-state">Selecciona una comparacion y un archivo compartido para ver diferencias de contenido.</div>
+        <div class="file-toolbar" id="file-toolbar"></div>
+        <pre id="file-preview" class="file-preview">Aun no hay archivo seleccionado.</pre>
+      </section>
+    </section>
+
+    <section class="view hidden-panel" data-view="services">
+      <div class="panel-topbar">
+        <button class="secondary-button" data-target-view="home" type="button">Inicio</button>
+        <div class="view-switcher">
+          <button class="secondary-button" data-target-view="inventory" type="button">Inventario y paquetes</button>
+          <button class="secondary-button active-switch" data-target-view="services" type="button">Servicios</button>
+        </div>
+        <div class="hero-meta" id="services-meta">
+          <span class="pill">Esperando datos</span>
+        </div>
+      </div>
+
+      <header class="hero panel-hero">
+        <div>
+          <p class="eyebrow">Panel 2</p>
+          <h1>Monitoreo de servicios</h1>
+          <p class="lede">Supervisa SSH, Samba, Docker y el backend de firewall del host. El estado de SFTP se deriva de la configuracion de SSH.</p>
+        </div>
+      </header>
+
+      <section class="grid three-up metrics-grid" id="services-summary"></section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>Servicios supervisados</h2>
+            <p>Refresco automatico cada 5 segundos con acciones directas cuando el backend lo permite.</p>
+          </div>
+          <div class="hero-meta">
+            <span class="pill">Auto refresh 5s</span>
+            <button class="secondary-button" id="refresh-services" type="button">Actualizar ahora</button>
+          </div>
+        </div>
+        <div id="service-action-feedback" class="empty-state hidden-panel"></div>
+        <div id="service-confirmation" class="confirmation-panel hidden-panel">
+          <p id="service-confirmation-text">Confirmacion pendiente.</p>
+          <div class="confirmation-actions">
+            <input type="text" id="service-confirmation-input" class="panel-input" placeholder="Escribe la accion para continuar">
+            <button class="secondary-button" id="confirm-service-action" type="button">Confirmar accion</button>
+            <button class="secondary-button" id="cancel-service-action" type="button">Cancelar</button>
+          </div>
+        </div>
+        <div id="services-grid" class="service-grid"></div>
+        <div id="service-log-viewer" class="comparison-panel empty-state">Selecciona un servicio y usa "Ver logs" para revisar eventos recientes.</div>
+      </section>
+    </section>
+
+    <footer class="system-footer">
+      <div>
+        <div class="system-footer-brand" aria-label="ServerAM1 Documentacion">
+          <p class="eyebrow">ServerAM1</p>
+          <p class="eyebrow">Documentacion</p>
+        </div>
+        <h2>Flujo del proyecto</h2>
+        <p class="system-footer-copy">Consulta el flujo operativo completo del panel, los scripts que intervienen en cada paso y la salida esperada de inventario, paquetes y servicios.</p>
+      </div>
+      <a class="footer-link-button" href="/project-flow.html">Abrir documentacion del flujo</a>
+    </footer>
+  </main>
+
+  <template id="job-template">
+    <article class="job-item">
+      <div class="job-head">
+        <div>
+          <h3></h3>
+          <p class="job-meta"></p>
+        </div>
+        <span class="job-status"></span>
+      </div>
+      <div class="job-progress hidden-panel"></div>
+      <pre class="job-log"></pre>
+    </article>
+  </template>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

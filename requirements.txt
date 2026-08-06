@@ -1,0 +1,6 @@
+# This project does not require third-party Python packages.
+# The local panel runs on the Python standard library only.
+# This file is kept for compatibility with environments that expect
+# a requirements.txt during installation or deployment.
+# To install system prerequisites like python3 and pip, use
+# bash scripts/install_requirements.sh

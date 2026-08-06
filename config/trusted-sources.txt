@@ -1,0 +1,11 @@
+# Allowed package sources for this workstation.
+# Format: <backend><space><origin-or-source-id>
+# Official distro mirrors do not need to be listed here.
+
+dpkg apt.postgresql.org
+dpkg brave-browser-apt-release.s3.brave.com
+dpkg deb.opera.com
+dpkg download.docker.com
+dpkg download.opensuse.org
+dpkg packages.microsoft.com
+dpkg ppa.launchpad.net
