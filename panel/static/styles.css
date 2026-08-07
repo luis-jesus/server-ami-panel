@@ -253,7 +253,7 @@ body {
   min-width: 0;
 }
 
-.market-ribbon-title h2 {
+.market-ribbon-heading {
   margin: 0;
   color: #effff4;
   font-size: clamp(0.98rem, 1.6vw, 1.18rem);
@@ -2222,7 +2222,7 @@ input[type="radio"] {
     padding: 12px;
   }
 
-  .market-ribbon-title h2 {
+  .market-ribbon-heading {
     font-size: 1rem;
   }
 
