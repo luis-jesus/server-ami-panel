@@ -280,6 +280,11 @@ body {
   animation: market-live-pulse 1.8s ease-out infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .market-live-pulse::after {
+    animation: none;
+  }
+}
 .market-ribbon-shell {
   position: relative;
   overflow: hidden;
