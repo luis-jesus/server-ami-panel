@@ -656,7 +656,7 @@ function renderSharedMarketTicker(entries) {
     root.classList.remove("is-animated");
     root.innerHTML = `
       <article class="market-chip is-empty">
-        <p>Mercado</p>
+        <p>En vivo</p>
         <strong>No disponible</strong>
         <span>Sin datos remotos</span>
       </article>

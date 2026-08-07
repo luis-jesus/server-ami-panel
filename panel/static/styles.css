@@ -242,15 +242,42 @@ body {
 
 .market-ribbon-head {
   display: grid;
-  gap: 6px;
+  align-items: center;
   min-width: 0;
 }
 
-.market-ribbon-head p {
+.market-ribbon-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.market-ribbon-title h2 {
   margin: 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.4;
+  color: #effff4;
+  font-size: clamp(0.98rem, 1.6vw, 1.18rem);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.market-live-pulse {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 6px rgba(86, 240, 154, 0.14);
+}
+
+.market-live-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 1px solid rgba(86, 240, 154, 0.42);
+  border-radius: inherit;
+  animation: market-live-pulse 1.8s ease-out infinite;
 }
 
 .market-ribbon-shell {
@@ -349,6 +376,23 @@ body {
 
 .market-chip.trend-down span {
   color: var(--warning);
+}
+
+@keyframes market-live-pulse {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.72);
+  }
+
+  70% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
 }
 
 .card-subtitle {
@@ -2171,6 +2215,10 @@ input[type="radio"] {
   .market-ribbon-bar {
     grid-template-columns: 1fr;
     padding: 12px;
+  }
+
+  .market-ribbon-title h2 {
+    font-size: 1rem;
   }
 
   .hero-home {
