@@ -1,0 +1,66 @@
+name: Branch policy
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate branch routing
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          head_ref="${{ github.head_ref }}"
+          base_ref="${{ github.base_ref }}"
+
+          if [[ "$head_ref" == feature/* || "$head_ref" == bugfix/* ]]; then
+            expected_base="develop"
+          elif [[ "$head_ref" == hotfix/* ]]; then
+            expected_base="master"
+          elif [[ "$head_ref" == master ]]; then
+            expected_base="develop"
+          elif [[ "$head_ref" == "3-titulo-de-mercado-a-indice-y-divisas" ]]; then
+            expected_base="develop"
+          else
+            echo "error: unsupported branch prefix for PR head: $head_ref"
+            echo "allowed: feature/*, bugfix/*, hotfix/*, master for cascade PRs, or the legacy branch 3-titulo-de-mercado-a-indice-y-divisas"
+            exit 1
+          fi
+
+          if [[ "$base_ref" != "$expected_base" ]]; then
+            echo "error: $head_ref debe apuntar a $expected_base y no a $base_ref"
+            exit 1
+          fi
+
+      - name: Validate commit message convention
+        if: github.head_ref != 'master' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          head_sha="${{ github.event.pull_request.head.sha }}"
+
+          git fetch origin "${{ github.base_ref }}" "${{ github.head_ref }}"
+          bash scripts/check_commit_messages.sh --range "${base_sha}..${head_sha}"
+
+      - name: Skip commit message convention for forks
+        if: github.head_ref != 'master' && github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+        run: echo "Skipping commit message convention check for fork PR."

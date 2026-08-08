@@ -40,7 +40,8 @@ MAX_LOG_LINES = 400
 MAX_FILE_PREVIEW = 256 * 1024
 SERVICE_ACTIONS = ("start", "stop", "restart")
 HOME_BRIEFING_CACHE_TTL = 60
-HOME_BRIEFING_CACHE_FILE = ROOT_DIR / "config" / "home_briefing_cache.json"
+HOME_BRIEFING_CACHE_FILE = ROOT_DIR / "tmp" / "home_briefing_cache.json"
+LEGACY_HOME_BRIEFING_CACHE_FILE = ROOT_DIR / "config" / "home_briefing_cache.json"
 HOME_BRIEFING_HISTORY_DAYS = 7
 HOME_BRIEFING_VISIBLE_DAYS = 2
 CISA_ADVISORIES_FEED_URL = "https://www.cisa.gov/cybersecurity-advisories/all.xml"
@@ -722,6 +723,8 @@ def home_briefing_has_content(payload: dict[str, Any]) -> bool:
 
 def load_persisted_home_briefing() -> dict[str, Any] | None:
     payload = read_json_file(HOME_BRIEFING_CACHE_FILE)
+    if not payload:
+        payload = read_json_file(LEGACY_HOME_BRIEFING_CACHE_FILE)
     if not payload or not home_briefing_has_content(payload):
         return None
     payload["stale"] = True
