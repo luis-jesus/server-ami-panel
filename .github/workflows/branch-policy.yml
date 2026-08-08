@@ -7,14 +7,12 @@ on:
       - synchronize
       - reopened
       - ready_for_review
-      - closed
 
 permissions:
   contents: read
 
 jobs:
   validate-and-cleanup:
-    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -66,36 +64,3 @@ jobs:
       - name: Skip commit message convention for forks
         if: github.head_ref != 'master' && github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
         run: echo "Skipping commit message convention check for fork PR."
-
-  cleanup-merged-branches:
-    if: github.event.action == 'closed' && github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Delete merged feature and bugfix branches
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const headRef = context.payload.pull_request.head.ref;
-            const headRepo = context.payload.pull_request.head.repo.full_name;
-            const baseRepo = context.payload.pull_request.base.repo.full_name;
-
-            if (!(headRef.startsWith('feature/') || headRef.startsWith('bugfix/'))) {
-              core.info(`Skipping cleanup for ${headRef}.`);
-              return;
-            }
-
-            if (headRepo !== baseRepo) {
-              core.info(`Skipping cleanup for fork branch ${headRepo}:${headRef}.`);
-              return;
-            }
-
-            await github.rest.git.deleteRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `heads/${headRef}`,
-            });
-
-            core.info(`Deleted merged branch ${headRef}.`);
