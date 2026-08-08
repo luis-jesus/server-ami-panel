@@ -112,6 +112,27 @@ bash tests/run_tests.sh
 
 La suite valida sintaxis, detección multi-distro, una corrida rápida del inventario, el backend Python del panel, la generación del payload de servicios y el flujo de revisión de actualizaciones.
 
+## Flujo de integración Git
+
+El repositorio está migrando a un workflow de integración con `develop` como rama de integración y `master` como rama de release.
+
+- `feature/*` y `bugfix/*` deben abrir PR hacia `develop`.
+- `hotfix/*` debe abrir PR hacia `master`.
+- Las ramas nuevas deben usar prefijo obligatorio seguido por un nombre numérico, alfabético o alfanumérico.
+- `@CarloAndrePonceMiranda` queda como CODEOWNER para revisiones requeridas en ramas protegidas.
+- Los commits deben usar formato `fix(scope) Descripcion`, `feature(scope) Descripcion`, `hotfix(scope) Descripcion` o `chore(scope) Descripcion`.
+
+Antes de preparar una release, ejecuta:
+
+```bash
+bash scripts/check_release.sh
+bash scripts/check_commit_messages.sh
+```
+
+El cache persistente del briefing se guarda bajo `tmp/` para no ensuciar el arbol Git del repositorio.
+
+La guía completa del flujo está en [docs/git-integration-workflow.md](docs/git-integration-workflow.md).
+
 ## Instalador interactivo
 
 El repositorio incluye un instalador principal en `install.sh`.
