@@ -48,48 +48,42 @@ jobs:
 
       - name: Resolve release kind
         id: release_kind
-        shell: bash
-        run: |
-          set -euo pipefail
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releaseInput = `${{ inputs.release_kind || 'auto' }}`;
+            const sourceRef = context.ref.replace('refs/heads/', '');
 
-          release_kind="${{ inputs.release_kind || 'auto' }}"
-          source_ref="${{ github.ref_name }}"
-          source_title="${{ github.event.head_commit.message || github.ref_name }}"
-          source_branch=""
+            const inferReleaseKind = (branchName) => {
+              if (branchName.startsWith('hotfix/')) return 'hotfix';
+              if (branchName.startsWith('feature/')) return 'feature';
+              if (branchName.startsWith('bugfix/')) return 'bugfix';
+              if (branchName === '3-titulo-de-mercado-a-indice-y-divisas') return 'feature';
+              return 'bugfix';
+            };
 
-          if [[ "$release_kind" == "auto" ]]; then
-            if [[ "$source_title" =~ [[:space:]]from[[:space:]].*/(hotfix/[^[:space:]]+) ]]; then
-              release_kind="hotfix"
-              source_branch="${BASH_REMATCH[1]}"
-            elif [[ "$source_title" =~ [[:space:]]from[[:space:]].*/(feature/[^[:space:]]+) ]]; then
-              release_kind="feature"
-              source_branch="${BASH_REMATCH[1]}"
-            elif [[ "$source_title" =~ [[:space:]]from[[:space:]].*/(bugfix/[^[:space:]]+) ]]; then
-              release_kind="bugfix"
-              source_branch="${BASH_REMATCH[1]}"
-            elif [[ "$source_title" =~ [[:space:]]from[[:space:]].*/(3-titulo-de-mercado-a-indice-y-divisas) ]]; then
-              release_kind="feature"
-              source_branch="${BASH_REMATCH[1]}"
-            elif [[ "$source_ref" == hotfix/* ]]; then
-              release_kind="hotfix"
-              source_branch="$source_ref"
-            elif [[ "$source_ref" == feature/* ]]; then
-              release_kind="feature"
-              source_branch="$source_ref"
-            elif [[ "$source_ref" == bugfix/* ]]; then
-              release_kind="bugfix"
-              source_branch="$source_ref"
-            elif [[ "$source_ref" == "3-titulo-de-mercado-a-indice-y-divisas" ]]; then
-              release_kind="feature"
-              source_branch="$source_ref"
-            else
-              release_kind="bugfix"
-            fi
-          fi
+            let sourceBranch = sourceRef;
+            let releaseKind = releaseInput;
 
-          echo "release_kind=$release_kind" >> "$GITHUB_OUTPUT"
-          echo "source_ref=$source_ref" >> "$GITHUB_OUTPUT"
-          echo "source_branch=$source_branch" >> "$GITHUB_OUTPUT"
+            if (releaseInput === 'auto') {
+              if (context.eventName === 'push') {
+                const associated = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  commit_sha: context.sha,
+                });
+                const mergedPr = associated.data.find((pr) => pr.merged_at) || associated.data[0];
+                if (mergedPr?.head?.ref) {
+                  sourceBranch = mergedPr.head.ref;
+                }
+              }
+
+              releaseKind = inferReleaseKind(sourceBranch);
+            }
+
+            core.setOutput('release_kind', releaseKind);
+            core.setOutput('source_ref', sourceRef);
+            core.setOutput('source_branch', sourceBranch);
 
       - name: Calculate next tag
         id: tag

@@ -10,12 +10,14 @@ on:
       - closed
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
-  validate-and-cleanup:
+  validate:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -50,7 +52,7 @@ jobs:
           fi
 
       - name: Validate commit message convention
-        if: github.head_ref != 'master'
+        if: github.head_ref != 'master' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
         shell: bash
         run: |
           set -euo pipefail
@@ -61,8 +63,18 @@ jobs:
           git fetch origin "${{ github.base_ref }}" "${{ github.head_ref }}"
           bash scripts/check_commit_messages.sh --range "${base_sha}..${head_sha}"
 
+      - name: Skip commit message convention for forks
+        if: github.head_ref != 'master' && github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+        run: echo "Skipping commit message convention check for fork PR."
+
+  cleanup-merged-branches:
+    if: github.event.action == 'closed' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
       - name: Delete merged feature and bugfix branches
-        if: github.event.pull_request.merged == true
         uses: actions/github-script@v7
         with:
           script: |
