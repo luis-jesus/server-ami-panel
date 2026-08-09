@@ -30,9 +30,11 @@ jobs:
           head_ref="${{ github.head_ref }}"
           base_ref="${{ github.base_ref }}"
 
-          if [[ "$head_ref" == feature/* || "$head_ref" == bugfix/* ]]; then
+          if [[ "$head_ref" == feature-major/* || "$head_ref" == feature/* || "$head_ref" == bugfix/* ]]; then
             expected_base="develop"
           elif [[ "$head_ref" == hotfix/* ]]; then
+            expected_base="master"
+          elif [[ "$head_ref" == develop ]]; then
             expected_base="master"
           elif [[ "$head_ref" == master ]]; then
             expected_base="develop"
@@ -40,7 +42,7 @@ jobs:
             expected_base="develop"
           else
             echo "error: unsupported branch prefix for PR head: $head_ref"
-            echo "allowed: feature/*, bugfix/*, hotfix/*, master for cascade PRs, or the legacy branch 3-titulo-de-mercado-a-indice-y-divisas"
+            echo "allowed: feature-major/*, feature/*, bugfix/*, hotfix/*, develop for release PRs, master for cascade PRs, or the legacy branch 3-titulo-de-mercado-a-indice-y-divisas"
             exit 1
           fi
 
@@ -50,7 +52,7 @@ jobs:
           fi
 
       - name: Validate commit message convention
-        if: github.head_ref != 'master' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
+        if: github.head_ref != 'master' && github.head_ref != 'develop' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
         shell: bash
         run: |
           set -euo pipefail
@@ -62,5 +64,5 @@ jobs:
           bash scripts/check_commit_messages.sh --range "${base_sha}..${head_sha}"
 
       - name: Skip commit message convention for forks
-        if: github.head_ref != 'master' && github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+        if: github.head_ref != 'master' && github.head_ref != 'develop' && github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
         run: echo "Skipping commit message convention check for fork PR."

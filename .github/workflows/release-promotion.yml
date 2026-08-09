@@ -1,0 +1,223 @@
+name: Release promotion
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-promotion-develop
+  cancel-in-progress: false
+
+jobs:
+  promote-develop:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update draft release PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const releaseLabels = {
+              major: { name: 'release-kind:major', color: 'b60205' },
+              minor: { name: 'release-kind:minor', color: 'fbca04' },
+              patch: { name: 'release-kind:patch', color: '0e8a16' },
+            };
+            const supportingLabels = [
+              { name: 'release-promotion', color: '0366d6' },
+              { name: 'automated', color: 'c5def5' },
+            ];
+
+            const kindForBranch = (branch) => {
+              if (branch.startsWith('feature-major/')) return 'major';
+              if (branch.startsWith('feature/') || branch.startsWith('bugfix/')) return 'minor';
+              if (branch === '3-titulo-de-mercado-a-indice-y-divisas') return 'minor';
+              return null;
+            };
+            const rank = { patch: 1, minor: 2, major: 3 };
+            const semver = /^v(\d+)\.(\d+)\.(\d+)$/;
+            const nextTag = (tag, kind) => {
+              const match = tag.match(semver);
+              if (!match) throw new Error(`Invalid semver tag: ${tag}`);
+              let major = Number(match[1]);
+              let minor = Number(match[2]);
+              let patch = Number(match[3]);
+              if (kind === 'major') {
+                major += 1;
+                minor = 0;
+                patch = 0;
+              } else if (kind === 'minor') {
+                minor += 1;
+                patch = 0;
+              } else {
+                patch += 1;
+              }
+              return `v${major}.${minor}.${patch}`;
+            };
+
+            const comparison = await github.rest.repos.compareCommitsWithBasehead({
+              owner,
+              repo,
+              basehead: 'master...develop',
+              per_page: 100,
+              page: 1,
+            });
+            if (comparison.data.ahead_by === 0) {
+              core.info('develop has no changes pending promotion.');
+              return;
+            }
+
+            const pendingCommits = [...comparison.data.commits];
+            for (let page = 2; pendingCommits.length < comparison.data.ahead_by; page += 1) {
+              const nextPage = await github.rest.repos.compareCommitsWithBasehead({
+                owner,
+                repo,
+                basehead: 'master...develop',
+                per_page: 100,
+                page,
+              });
+              if (nextPage.data.commits.length === 0) {
+                throw new Error(`Compare API returned ${pendingCommits.length} of ${comparison.data.ahead_by} pending commits.`);
+              }
+              pendingCommits.push(...nextPage.data.commits);
+            }
+
+            const included = new Map();
+            for (const commit of pendingCommits) {
+              const associated = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner,
+                repo,
+                commit_sha: commit.sha,
+              });
+              for (const pull of associated.data) {
+                if (!pull.merged_at || pull.base.ref !== 'develop') continue;
+                const kind = kindForBranch(pull.head.ref);
+                if (kind) included.set(pull.number, { number: pull.number, branch: pull.head.ref, kind });
+              }
+            }
+
+            if (context.eventName === 'pull_request') {
+              const pull = context.payload.pull_request;
+              const kind = kindForBranch(pull.head.ref);
+              if (kind) included.set(pull.number, { number: pull.number, branch: pull.head.ref, kind });
+            }
+
+            const changes = [...included.values()].sort((left, right) => left.number - right.number);
+            if (changes.length === 0) {
+              core.info('No releasable feature or bugfix PRs were found between master and develop.');
+              return;
+            }
+
+            const releaseKind = changes.reduce(
+              (highest, change) => rank[change.kind] > rank[highest] ? change.kind : highest,
+              'patch',
+            );
+            const tags = await github.paginate(github.rest.repos.listTags, { owner, repo, per_page: 100 });
+            const versions = tags
+              .map((tag) => ({ name: tag.name, match: tag.name.match(semver) }))
+              .filter((tag) => tag.match)
+              .sort((left, right) => {
+                for (let index = 1; index <= 3; index += 1) {
+                  const difference = Number(right.match[index]) - Number(left.match[index]);
+                  if (difference !== 0) return difference;
+                }
+                return 0;
+              });
+            if (versions.length === 0) throw new Error('No semver base tag was found.');
+
+            const currentTag = versions[0].name;
+            const plannedTag = nextTag(currentTag, releaseKind);
+            const metadata = {
+              release_kind: releaseKind,
+              current_tag: currentTag,
+              planned_tag: plannedTag,
+              develop_sha: comparison.data.head_commit.sha,
+              pull_requests: changes,
+            };
+            const changeLines = changes.map(
+              (change) => `- #${change.number} \`${change.branch}\` (${change.kind})`,
+            );
+            const body = [
+              'Esta PR promueve los cambios revisados de `develop` a `master`.',
+              '',
+              `- Tag actual: \`${currentTag}\``,
+              `- Tag previsto: \`${plannedTag}\``,
+              `- Tipo acumulado: \`${releaseKind}\``,
+              `- Comparacion: https://github.com/${owner}/${repo}/compare/master...develop`,
+              '',
+              '## PRs incluidas',
+              ...changeLines,
+              '',
+              'Al fusionar esta PR, Release management validara y publicara el tag previsto.',
+              'La GitHub Release se publica manualmente despues del tag.',
+              '',
+              '<!-- RELEASE_METADATA',
+              JSON.stringify(metadata, null, 2),
+              'RELEASE_METADATA -->',
+            ].join('\n');
+
+            for (const label of [...Object.values(releaseLabels), ...supportingLabels]) {
+              try {
+                await github.rest.issues.createLabel({ owner, repo, ...label });
+              } catch (error) {
+                if (error.status !== 422) throw error;
+              }
+            }
+
+            const openPulls = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              head: `${owner}:develop`,
+              base: 'master',
+              per_page: 100,
+            });
+            let releasePull = openPulls.data[0];
+            if (releasePull) {
+              releasePull = (await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: releasePull.number,
+                title: `chore(release) prepara ${plannedTag} desde develop`,
+                body,
+              })).data;
+              core.info(`Updated release PR #${releasePull.number}.`);
+            } else {
+              try {
+                releasePull = (await github.rest.pulls.create({
+                  owner,
+                  repo,
+                  head: 'develop',
+                  base: 'master',
+                  title: `chore(release) prepara ${plannedTag} desde develop`,
+                  body,
+                  draft: true,
+                })).data;
+              } catch (error) {
+                if (error.status === 403 && `${error.message}`.includes('not permitted to create')) {
+                  throw new Error('Enable Settings > Actions > General > Allow GitHub Actions to create and approve pull requests.');
+                }
+                throw error;
+              }
+              core.info(`Created draft release PR #${releasePull.number}.`);
+            }
+
+            const existingLabels = releasePull.labels
+              .map((label) => label.name)
+              .filter((name) => !name.startsWith('release-kind:'));
+            await github.rest.issues.setLabels({
+              owner,
+              repo,
+              issue_number: releasePull.number,
+              labels: [...new Set([...existingLabels, releaseLabels[releaseKind].name, ...supportingLabels.map((label) => label.name)])],
+            });

@@ -117,6 +117,7 @@ La suite valida sintaxis, detección multi-distro, una corrida rápida del inven
 El repositorio está migrando a un workflow de integración con `develop` como rama de integración y `master` como rama de release.
 
 - `feature/*` y `bugfix/*` deben abrir PR hacia `develop`.
+- `feature-major/*` debe abrir PR hacia `develop` y genera un incremento major.
 - `hotfix/*` debe abrir PR hacia `master`.
 - Las ramas nuevas deben usar prefijo obligatorio seguido por un nombre numérico, alfabético o alfanumérico.
 - `@CarloAndrePonceMiranda` queda como CODEOWNER para revisiones requeridas en ramas protegidas.
@@ -132,6 +133,8 @@ bash scripts/check_commit_messages.sh
 El cache persistente del briefing se guarda bajo `tmp/` para no ensuciar el arbol Git del repositorio.
 
 La guía completa del flujo está en [docs/git-integration-workflow.md](docs/git-integration-workflow.md).
+
+El tipo de version se determina por la rama: `feature-major/*` genera major, `feature/*` y `bugfix/*` generan minor, y `hotfix/*` genera patch. Los merges hacia `develop` crean o actualizan una PR draft de promocion `develop -> master`; al fusionarla se publica el tag y la GitHub Release se crea manualmente.
 
 ## Instalador interactivo
 

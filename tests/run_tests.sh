@@ -376,6 +376,14 @@ test_installer_e2e_temp_clone() {
     fi
 }
 
+test_release_workflow_policy() {
+    if bash "$ROOT_DIR/tests/release_workflow_test.sh"; then
+        pass "release workflow policy"
+    else
+        fail "release workflow policy"
+    fi
+}
+
 test_panel_help() {
     local help_output
 
@@ -504,6 +512,7 @@ main() {
     run_test "installer menu render" test_installer_menu_render
     run_test "installer install cycle" test_installer_install_cycle
     run_test "installer e2e temp clone" test_installer_e2e_temp_clone
+    run_test "release workflow policy" test_release_workflow_policy
     run_test "panel help" test_panel_help
     run_test "panel python syntax" test_panel_python_syntax
     run_test "panel services payload" test_panel_services_payload

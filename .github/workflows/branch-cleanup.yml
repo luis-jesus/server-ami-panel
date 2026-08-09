@@ -22,7 +22,7 @@ jobs:
             const headRepo = context.payload.pull_request.head.repo.full_name;
             const baseRepo = context.payload.pull_request.base.repo.full_name;
 
-            if (!(headRef.startsWith('feature/') || headRef.startsWith('bugfix/'))) {
+            if (!(headRef.startsWith('feature-major/') || headRef.startsWith('feature/') || headRef.startsWith('bugfix/'))) {
               core.info(`Skipping cleanup for ${headRef}.`);
               return;
             }
