@@ -311,6 +311,50 @@ test_installer_menu_render() {
     assert_file_contains "$color_file" $'\033\[34m' "installer menu options use blue ANSI"
 }
 
+test_installer_metadata_round_trip() {
+    local home_root="$TMP_ROOT/installer metadata home"
+    local metadata_file="$home_root/.local/share/serveram1/install.env"
+    local metadata_output="$TMP_ROOT/installer-metadata-output.txt"
+    local metadata_errors="$TMP_ROOT/installer-metadata-errors.txt"
+    local legacy_errors="$TMP_ROOT/installer-legacy-errors.txt"
+
+    mkdir -p "$(dirname -- "$metadata_file")"
+
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    bash -c '
+        source "$1"
+        installer_init "$2"
+        installer_write_metadata
+        unset ROOT_DIR
+        installer_load_metadata
+        printf "%s\n" "$ROOT_DIR"
+    ' _ "$ROOT_DIR/scripts/lib/installer.sh" "$ROOT_DIR" > "$metadata_output" 2> "$metadata_errors"
+
+    assert_eq "$ROOT_DIR" "$(cat -- "$metadata_output")" "installer metadata preserves paths with spaces"
+    if [[ ! -s "$metadata_errors" ]]; then
+        pass "installer metadata reload has no shell errors"
+    else
+        fail "installer metadata reload emitted shell errors"
+    fi
+
+    printf 'INSTALLATION_REGISTERED=1\nROOT_DIR=%s\n' "$ROOT_DIR" > "$metadata_file"
+    HOME="$home_root" \
+    XDG_DATA_HOME="$home_root/.local/share" \
+    XDG_STATE_HOME="$home_root/.local/state" \
+    XDG_CONFIG_HOME="$home_root/.config" \
+    SERVERAM1_INSTALLER_COLOR_MODE=never \
+    bash "$ROOT_DIR/install.sh" print-menu >/dev/null 2> "$legacy_errors"
+
+    if [[ ! -s "$legacy_errors" ]]; then
+        pass "installer hides errors from legacy metadata"
+    else
+        fail "installer emitted errors from legacy metadata"
+    fi
+}
+
 test_installer_install_cycle() {
     local home_root="$TMP_ROOT/installer-cycle-home"
     local install_output="$TMP_ROOT/installer-install.txt"
@@ -502,6 +546,7 @@ main() {
     run_test "install requirements print" test_install_requirements_print
     run_test "installer help" test_installer_help
     run_test "installer menu render" test_installer_menu_render
+    run_test "installer metadata round trip" test_installer_metadata_round_trip
     run_test "installer install cycle" test_installer_install_cycle
     run_test "installer e2e temp clone" test_installer_e2e_temp_clone
     run_test "panel help" test_panel_help

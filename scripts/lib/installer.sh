@@ -21,7 +21,7 @@ installer_init() {
     SERVERAM1_ROOT_DIR=${1:-${SERVERAM1_ROOT_DIR:-$SERVERAM1_ROOT_DIR_DEFAULT}}
     if [[ -n ${SERVERAM1_TARGET_HOME:-} ]]; then
         SERVERAM1_TARGET_HOME=$SERVERAM1_TARGET_HOME
-    elif [[ -n ${SUDO_USER:-} ]]; then
+    elif [[ -n ${SUDO_USER:-} || ${HOME:-} == */snap/code/* ]]; then
         SERVERAM1_TARGET_HOME=$(resolve_target_home)
     else
         SERVERAM1_TARGET_HOME=${HOME:-$(resolve_target_home)}
@@ -58,7 +58,7 @@ installer_init() {
 installer_load_metadata() {
     if [[ -f ${SERVERAM1_METADATA_FILE:-} ]]; then
         # shellcheck disable=SC1090
-        source "$SERVERAM1_METADATA_FILE"
+        source "$SERVERAM1_METADATA_FILE" 2>/dev/null
     fi
 }
 
@@ -332,17 +332,17 @@ installer_finish_progress() {
 
 installer_write_metadata() {
     installer_ensure_base_dirs
-    cat > "$SERVERAM1_METADATA_FILE" <<EOF
-INSTALLATION_REGISTERED=1
-ROOT_DIR=$SERVERAM1_ROOT_DIR
-VENV_DIR=$SERVERAM1_VENV_DIR
-APP_DESKTOP_FILE=$SERVERAM1_APP_DESKTOP_FILE
-INSTALLER_DESKTOP_FILE=$SERVERAM1_INSTALLER_DESKTOP_FILE
-APP_SHIM=$SERVERAM1_APP_SHIM
-INSTALLER_SHIM=$SERVERAM1_INSTALLER_SHIM
-LOG_FILE=$SERVERAM1_LOG_FILE
-INSTALLED_AT=$(installer_timestamp)
-EOF
+    {
+        printf 'INSTALLATION_REGISTERED=%q\n' 1
+        printf 'ROOT_DIR=%q\n' "$SERVERAM1_ROOT_DIR"
+        printf 'VENV_DIR=%q\n' "$SERVERAM1_VENV_DIR"
+        printf 'APP_DESKTOP_FILE=%q\n' "$SERVERAM1_APP_DESKTOP_FILE"
+        printf 'INSTALLER_DESKTOP_FILE=%q\n' "$SERVERAM1_INSTALLER_DESKTOP_FILE"
+        printf 'APP_SHIM=%q\n' "$SERVERAM1_APP_SHIM"
+        printf 'INSTALLER_SHIM=%q\n' "$SERVERAM1_INSTALLER_SHIM"
+        printf 'LOG_FILE=%q\n' "$SERVERAM1_LOG_FILE"
+        printf 'INSTALLED_AT=%q\n' "$(installer_timestamp)"
+    } > "$SERVERAM1_METADATA_FILE"
 }
 
 installer_verify_python() {
@@ -356,9 +356,15 @@ installer_verify_python() {
 
 installer_prepare_venv() {
     rm -rf "$SERVERAM1_VENV_DIR"
-    python3 -m venv "$SERVERAM1_VENV_DIR"
-    "$SERVERAM1_VENV_DIR/bin/python" -m ensurepip --upgrade >/dev/null 2>&1 || true
-    "$SERVERAM1_VENV_DIR/bin/python" -m pip --disable-pip-version-check install -r "$SERVERAM1_ROOT_DIR/requirements.txt" >/dev/null
+    python3 -m venv --without-pip "$SERVERAM1_VENV_DIR"
+
+    if grep -Eq '^[[:space:]]*[^#[:space:]]' "$SERVERAM1_ROOT_DIR/requirements.txt"; then
+        if ! "$SERVERAM1_VENV_DIR/bin/python" -m ensurepip --upgrade >/dev/null 2>&1; then
+            printf 'No fue posible instalar pip. Instala el paquete python3-venv de tu distribucion.\n' >&2
+            return 1
+        fi
+        "$SERVERAM1_VENV_DIR/bin/python" -m pip --disable-pip-version-check install -r "$SERVERAM1_ROOT_DIR/requirements.txt" >/dev/null
+    fi
 }
 
 installer_write_shim() {
@@ -404,6 +410,9 @@ installer_install_artifacts() {
     installer_write_shim "$SERVERAM1_INSTALLER_SHIM" "$SERVERAM1_ROOT_DIR/scripts/launch_installer.sh"
     installer_write_app_desktop
     installer_write_installer_desktop
+    if command_exists update-desktop-database; then
+        update-desktop-database "$SERVERAM1_DESKTOP_DIR" >/dev/null 2>&1 || true
+    fi
 }
 
 installer_install() {
@@ -454,11 +463,7 @@ installer_update() {
     installer_run_update_command || return 1
 
     installer_progress 2 "$total" 'Refrescando entorno virtual'
-    if [[ ! -x $SERVERAM1_PYTHON_BIN ]]; then
-        installer_prepare_venv || return 1
-    else
-        "$SERVERAM1_PYTHON_BIN" -m pip --disable-pip-version-check install -r "$SERVERAM1_ROOT_DIR/requirements.txt" >/dev/null || return 1
-    fi
+    installer_prepare_venv || return 1
 
     installer_progress 3 "$total" 'Regenerando artefactos'
     installer_install_artifacts || return 1
