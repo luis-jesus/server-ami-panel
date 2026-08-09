@@ -8,3 +8,7 @@ update-reports/*
 !update-reports/.gitkeep
 tests/tmp/*
 !tests/tmp/.gitkeep
+tmp/*
+!tmp/
+!tmp/.gitkeep
+config/home_briefing_cache.json

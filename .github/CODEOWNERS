@@ -1,0 +1,4 @@
+# ServerAM1 repository ownership.
+# Apply branch protection on master and develop to require CODEOWNERS review.
+
+* @luis-jesus @CarloAndrePonceMiranda
